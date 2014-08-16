@@ -1,0 +1,100 @@
+\chapter{Introduction}
+
+  Over the past 40 years, computational power has doubled roughly once every 18
+  months, but over that time, memory access speeds have only doubled once every
+  18 years \cite{hennessy2012computer}. Much of the world's computer
+  infrastructure is limited not by how quickly a CPU can process data, but
+  rather by how quickly data can be retrieved from a backing store. Several
+  techniques can mitigate the impact of this bottleneck, such as data mirroring
+  or space conscientious compiler optimizations \cite{wolf1991data,
+  patterson1988case}. This thesis focuses on a particularly effective technique:
+  caching.
+
+  Caches are blocks of memory that are smaller and have faster retrieval times
+  than a backing store. For example, a cache can be placed in RAM while the
+  backing store is placed on an SSD or HDD. Caches store certain pages that have
+  already been referenced under the assumption that the pages will be referenced
+  again.
+
+  Caches exist at many levels, such as between a CPU and the motherboard or
+  between the motherboard and RAM based main memory. Main memory is also
+  stored on a cache. Lower level caches, that is, the caches closer to the
+  CPU, are required to perform at a faster speed than higher level caches
+  \cite{tanenbaum2007modern}.
+
+  Not all memory can be constructed from the fastest type of memory for a
+  variety of reasons. First, faster memory tends to have a lower density, which
+  means that the physical volume required to construct a backing store
+  constructed out of high speed memory is prohibitive. Another issue is that
+  faster memory is significantly more costly to produce than slower memory.
+  However, there are also benefits to having the backing store for all of a
+  computer's data be on a non-volatile medium; whenver the power fails, data
+  will decay off a volatile medium but will persist on an HDD or SSD.
+
+  A caching algorithm, also commonly called a cache policy, decides which pages
+  to store and which pages to ignore. The \lq\lq principle of locality" is the idea
+  that programs tend to concentrate their working sets to a particular subset
+  of available memory for a long period of time \cite{aho1971principles}.
+
+  Cache policies can take advantage of this in different ways. When a segment of
+  virtual memory contains machine instructions, those instructions are likely
+  contained in a loop, and a Least-Recently-Used (LRU) algorithm will tend to
+  keep these instructions within cache. Another situation that benefits from the
+  principle of locality is when a program needs to scan a large file. In this
+  situation, the memory addresses near the end of the file are not likely
+  contained within the cache. A prefetching algorithm can vastly outperform an
+  LRU in these situations.
+
+  Many effective demand-paging algorithms employ some form of heuristic to
+  \lq\lq mix" multiple caching policies to better reflect the realities of
+  modern systems. Caching policies are generally specified by the system
+  programmers and are \lq\lq invisible" to typical processes. While some cache
+  techniques, such as the adaptive replacement cache and the adaptive least
+  recently/frequently used algorithm will adjust at runtime, these approaches
+  still use heuristical algorithms to adapt to moving hot spots and changing
+  working sets \cite{arc, kim2001lrfu}.
+
+  This thesis offers two contributions to the field of memory caching. The first
+  contribution is that it presents the mixture model caching algorithm (MMC).
+  This algorithm uses statistical models to characterize the memory
+  usage patterns of a system, and using these models, it identifies the expected
+  value for a page of memory. The second contribution is that it demonstrates
+  that statistical models provide a flexible alternative to heuristical
+  approaches.
+
+  The remainder of this thesis is arranged with a narrative structure. Chapter
+  \ref{chapter:background} describes many of the current caching algorithms. The
+  chapter concludes with a discussion of the approach employed by MMC. This is a
+  high-level view that describes the challenges that need to be handled by MMC.
+
+  Following this, chapter \ref{chapter:methods} derives the mathematical
+  foundations for two variations on the MMC algorithm. The first variation is
+  inspired by recency and frequency ideas that are employed by many of the
+  caching algorithms described in chapter \ref{chapter:background}. However, the
+  second variation takes advantage of the flexible nature of the MMC algorithm
+  to additionally account for whether the most recent request for a page was to
+  read from the page or to write to the page. Chapter \ref{chapter:methods}
+  concludes with a high level description of the coding choices used to
+  translate the mathematical derivations into the supplemental code for this
+  thesis \cite{supplimental}.
+
+  Chapter \ref{chapter:results} presents data collected by the supplemental code
+  \cite{supplimental}. The algorithms derived in chapter \ref{chapter:methods}
+  permit the computer to make non-intuitive decisions; the graphs in chapter
+  \ref{chapter:results} illuminate much of this non-intuitive behavior. The
+  purpose of chapter \ref{chapter:results} is to demonstrate that MMC is capable
+  of making reasonable caching decisions. The chapter does not attempt to
+  demonstrate that any one caching algorithm is superior to others, but it does
+  provide sufficient evidence to conclude that MMC is a worthwhile topic for
+  continued research.
+
+  Following these results, chapter \ref{chapter:conclusions} discusses why MMC
+  is an exciting new paradigm in caching. However, it also discusses the
+  challenges that need to be solved in order to prepare MMC for a production
+  environment.
+
+  Finally, chapter \ref{chapter:future_work} describes avenues of future work.
+  This summarizes the tasks required to prepare MMC for a production
+  environment, but it also describes topics of research that have the potential
+  to improve the core MMC algorithm.
+

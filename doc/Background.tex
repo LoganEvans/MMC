@@ -1,0 +1,398 @@
+\chapter{Background}
+\label{chapter:background}
+
+  This chapter describes two aspects of caching: the first aspect is the problem
+  that is addressed by caching techniques; the second aspect is a brief
+  description of many of the algorithms that are employed to handle caching.
+  Finally, this chapter provides an overview of the approach employed by the
+  mixture model caching (MMC) algorithm.
+
+  A fundamental challenge encountered by many computing systems is that programs
+  running on a computer's CPU require data to operate. However, fetching this
+  data into the CPU's registers is orders of magnitude slower than the operation
+  speed of modern CPUs. Furthermore, the amount of memory that can be quickly
+  accessed by a CPU is much smaller than the working set of most programs.
+  Consequently, a computer frequently needs to load a page that is stored on
+  a slower, but more spacious, medium. These mediums are arranged in a tiered
+  structure, and are commonly referred to as caches. When a cache does not have
+  sufficient free space, a policy decision must decide which page should be
+  evicted to make room for fresh pages \cite{aho1971principles}.
+
+  Different concerns govern which caching algorithms are useful for which levels
+  of cache. For a low level cache -- that is, a cache that is very close to the
+  CPU -- faster decisions are required. An example of an algorithm that is
+  interesting primarily at this level is the CLOCK algorithm
+  \cite{tanenbaum2007modern}. Higher levels of cache are slower; therefore, a
+  computer is able to spend more time making page-out decisions. Since the MMC
+  algorithm requires a high computational overhead, this thesis focuses on
+  algorithms that are employed in higher levels of cache.
+
+  Virtual memory management systems can be split into reactive and proactive
+  approaches. Reactive memory management systems are commonly referred to as
+  demand-paging. In a reactive system, a page is only retrieved from the
+  backing store when a process requests the page. When this happens, if there is
+  not enough space in the cache, the algorithm must evict one of the pages
+  currently in the cache. Any future request for the evicted page generates
+  a page fault. An algorithm that evicts a page from cache only when it needs to
+  make room for a freshly-paged-in page is referred to as a page-out algorithm.
+  A variation of the demand-paging algorithm employs a background daemon that
+  wakes up when the cache is filled to a certain capacity. At this point,
+  the daemon evicts pages until the number of pages in the cache falls
+  below some threshold \cite{mckusick2004design}.
+
+  The second main variety of paging algorithm is proactive. This approach uses
+  prefetching to load pages into cache before a page fault occurs. Prefetching
+  introduces several concerns that do not exist in demand-paging systems. Among
+  these are \emph{coverage}, which measures the fraction of page requests that
+  are fulfilled via prefetching instead of demand-paging; \emph{accuracy}, which
+  measures the fraction of prefetched pages that are used before they are
+  evicted; and \emph{timeliness}, which asks whether a prefetched page was
+  loaded into cache early enough that the page request does not generate a
+  page fault, and was prefetched early enough that it was not evicted before it
+  could be used \cite{joseph1997prefetching}.
+
+  Several virtual memory paging algorithms have been proposed. The efficacy
+  of an algorithm depends on two main factors. The first factor is the speed of
+  the algorithm. The second factor is how well the algorithm predicts future
+  memory requests.
+
+  All algorithms must employ some technique to identify whether a page exists
+  within cache. FreeBSD uses a balanced binary tree, which takes $O(|K|)$ time,
+  where $|K|$ is the size of the cache, to identify whether a page is in cache
+  \cite{mckusick2004design}. Various popular paging algorithms belong to
+  different time complexity categories. For example, the Least Recently Used
+  (LRU) algorithm has a constant page eviction time, whereas the amount of time
+  it takes for the LRU-2 algorithm to evict a page belongs to the class
+  $O(\log(|K|))$. If both of these algorithms use a page identification algorithm
+  that operates in logarithmic time, then both algorithms have a time
+  complexity of $O(\log(|K|))$.
+
+\section{Interesting metrics}
+  In this thesis, several metrics for comparing page-out algorithms are used.
+  This includes the hit rate for various traces, the time complexity, and the
+  space complexity. The following sections describe different metrics.
+
+\subsection{Hit rate}
+  The hit rate $H$ is the ratio of cache hits $C$ divided by the number of page
+  requests $R$: $H = \frac{C}{R}$. The average speed $A$ of a memory request
+  depends on the hit rate. In a simple system with uniform memory access (UMA),
+  a memory request can be fulfilled with one of two rates: the time for a cache
+  hit $T_C$, or the time for a cache miss $T_M$. In mathematical form, this is
+
+  \begin{equation*}
+    A = H \times T_C + (1 - H) \times T_M .
+  \end{equation*}
+
+  In general, the time needed to service a cache hit is much less than the time
+  needed to service a cache miss (i.e. $T_C << T_M$). Thus, when the hit rate is
+  also modestly low, we end up with the approximate relationship
+
+  \begin{equation*}
+    A \approx (1 - H) \times T_M .
+  \end{equation*}
+
+  The hit rate is the most commonly used measurement to compare the efficacy
+  of two page-out algorithms since the hit rate summarizes how well the
+  algorithm performs over a period of time. However, the hit rate is not
+  universal. Instead, we can only measure the hit rate for traces. A trace is a
+  sequence of page requests. A trace can be randomly generated or recorded from
+  a live system.
+
+\subsection{Headway Between Faults (HBF)}
+  This statistic measures how many page requests a caching algorithm is expected
+  to service before a page fault occurs. This information can help support (or
+  discredit) the notion that page requests are distributed according to some
+  distribution. If all page requests have an equal hit rate $P$, then the
+  HBF statistic can be modeled with a negative binomial distribution.
+
+  The HBF is of practical concern since all computer processes must be
+  scheduled. When a process generates a page fault, the system scheduler will
+  generally perform a context swap so that another process can use the
+  processor. Many schedulers, such as the FreeBSD ULE scheduler, use a priority
+  calculation that favors processes that voluntarily sleep while they wait for a
+  page fault to be serviced \cite{roberson2003ule}. This improves the
+  responsiveness of interactive programs.
+
+\subsection{Time complexity}
+  As cache sizes grow, it is important to have a caching algorithm that scales
+  well. However, the two key time complexity requirements are (1) that the page-out
+  algorithm leaves enough CPU resources for other processes to run in a timely
+  manner, and (2) that the algorithm makes page-out decisions quickly enough that
+  the process does not add significant latency to the page-fetch process. As
+  long as sufficient CPU resources are available to a system, an asynchronous
+  page-out process, such as the FreeBSD page-out daemon, will negate this second
+  time complexity requirement \cite{mckusick2004design}.
+
+  The time complexity is important, but only up to a point. The time complexity
+  of making a single page-out decision for several page-out algorithms is
+  summarized in \ref{tab:complexity}. The two time complexities are $O(1)$ and
+  $O(\log(|K|))$, where $|K|$ is the size of the cache. Even if an algorithm
+  with a time complexity of $O(\log(|K|))$ has a higher hit rate than an
+  alternative, it is not guaranteed that the algorithm will produce a speed-up
+  over an algorithm with a time complexity of $O(1)$.
+
+\subsection{Space complexity}
+  All caching algorithms need to maintain some type of metadata. At a minimum,
+  the algorithm must maintain enough information that it can determine if a
+  requested page is resident in cache. However, this metadata is information
+  that cannot be evicted from the cache. Thus, if an algorithm requires less
+  metadata, the effective cache size is larger. The practical concern is that
+  a large cache will typically have a higher hit rate than a smaller cache. An
+  algorithm with a higher space complexity may be justified, however, if the
+  algorithm also produces a sufficiently higher hit rate.
+
+\section{Benchmarks and traces}
+  The Storage Performance Council (SPC) defined a standardized trace file
+  format \cite{SPC1}. The general information provided by a trace that follows
+  this format is the page identification, the size of the page request, an
+  indication of whether the request is a read or a write operation, and a
+  time stamp.
+
+  This specification does not require that certain other relevant information be
+  recorded, such as the process ID or \lq\lq madvise" system calls that provide
+  the virtual memory controller with usage pattern hints. The format does allow
+  for ad hoc additional information.
+
+  A trace can provide an example of how an algorithm might perform for a
+  specific application. It is not possible to draw universal conclusions about
+  the performance of an algorithm by looking at its performance on a single trace.
+  However, while looking at trace performance is imperfect, it is a widely used
+  tool to benchmark page-out algorithms.
+
+\section{Memory reference models}
+  One way to conceptualize a system's paging behavior is to assume that all page
+  requests are drawn from some unknown distribution. Several models exist that
+  attempt to approximate this distribution. Some algorithms perform better on
+  certain models. For example, if all memory references are independent and
+  identically distributed, then the model is referred to as the independent
+  reference model (IRM) \cite{arc}. Under this model, the Least Frequently Used
+  (LFU) algorithm will approach optimality.
+
+  Another model is the stack depth distribution (SDD), which assumes that
+  there is a discrete distribution with a fixed probability that the next page
+  $x$ can be found in the stack at depth $i$. If the function $H(x)$ specifies
+  the depth, then the probability mass function is $\Pr(H(x) = i) = p_i$.
+
+  A random reference model is a subset of the IRM. Under this model, all pages
+  are equally likely to be referenced, but since the domain of all pages is
+  typically vastly greater than the number of pages that can be stored in cache,
+  the probability of a cache hit is minuscule. The overhead of even a very cheap
+  caching algorithm can outweigh the benefit of the infrequent cache hits.
+
+\section{Page-out algorithms}
+  A page-out algorithm is a reactive algorithm that will evict a page from cache
+  whenever a cache miss occurs. This section briefly describes some of these
+  algorithms.
+
+  \begin{table}
+  \begin{tabular}{ | l | l | l | p{5cm} |}
+    \hline
+    Algorithm & Time complexity & Space complexity  &
+      Reference \\ \hline
+    MIN       & $O(|K|^2)$      & $O(|K|)$            &
+      \cite{aho1971principles} \\ \hline
+    LRU       & $O(1)$          & $O(|K|)$            &
+      \cite{aho1971principles} \\ \hline
+    LFU       & $O(1)$          & $O(|V|)$            &
+      \cite{aho1971principles} \\ \hline
+    LRU-K     & $O(\log(|K|))$   & $O(|K|)$            &
+      \cite{o1993lru} \\ \hline
+    2Q        & $O(1)$          & $O(|K|)$            &
+      \cite{johnson1994x3} \\ \hline
+    ARC       & $O(1)$          & $O(|K|)$            &
+      \cite{arc} \\ \hline
+    LRFU      & $O(1) \mbox{ to } O(|V|)$ & $O(1)$    &
+      \cite{kim2001lrfu} \\ \hline
+    FBR       & $O(1)$          & $O(|K|)$            &
+      \cite{robinson1990data} \\ \hline
+    LIRS      & $O(1)$          & $O(|K|)$            &
+      \cite{jiang2002lirs} \\ \hline
+  \end{tabular}
+  \caption[Space and time complexity of caching algorithms]{
+    This shows the relative time and space complexities for the page-out
+    decision portion of various paging algorithms. The value $|K|$ represents
+    the size of the cache while the value $|V|$ represents the size of the virtual
+    memory.
+  }
+  \label{tab:complexity}
+  \end{table}
+
+\subsection{The MIN page-out algorithm}
+  This algorithm evicts the page that has the longest time until it will be seen
+  again. Since this requires knowledge of the future, the MIN algorithm is only
+  used to post-process a trace.
+
+  However, this algorithm obtains the theoretic optimal \cite{aho1971principles}
+  hit rate for any trace so it is useful to gauge the upper bound on performance
+  for any caching algorithm.
+
+\subsection{Least Recently Used (LRU)}
+  One of the most common paging algorithms is the LRU. This algorithm uses a
+  linked list to construct an eviction queue. If a page must be evicted, that
+  page will be found at the tail of the queue. If a page request generates a
+  cache hit, the page is first removed from the queue. The page is then placed
+  at the head of the queue.
+
+  This algorithm is known to be optimal if the memory references come from
+  a stack depth distribution where the probability density of referencing any of
+  the first $|K|$ pages is greater than or equal to the density of referencing
+  any other page \cite{StackDepthDist, wood1983minimization}.
+
+\subsection{Least Frequently Used (LFU)}
+  This algorithm generates an empirical density function. Whenever it needs to
+  evict a page, it will evict the page that has been seen the fewest number of
+  times since the trace started. This algorithm is optimal when all page
+  requests are independent and identically distributed according to an unknown
+  static distribution \cite{aho1971principles}.
+
+\subsection{Least Recently Used K (LRU-K)}
+  The basic idea behind the LRU-K is that it will evict the page whose $K$th
+  most recent access is the oldest \cite{o1993lru}. It is possible to show that
+  the LRU-2 algorithm is optimal under the conditions that the algorithm is only
+  provided with knowledge of the times of the last two references to each page
+  (up to some horizon) and that all pages are drawn from a static distribution
+  \cite{o1999optimality}.
+
+\subsection{2Q}
+  This approach uses two queues; one queue holds recently referenced pages that
+  have only been seen once while resident in the cache and the second queue holds
+  frequently referenced pages that have been referenced at least once after they
+  were paged into the cache \cite{johnson1994x3}. This algorithm is an
+  approximation of LRU-K algorithm \cite{arc}.
+
+\subsection{Adaptive Replacement Cache (ARC)}
+  ARC uses the same idea behind 2Q where it maintains two queues; one for pages
+  that have not been referenced since they were paged into the cache, and one
+  for the pages that have seen at least one additional reference.
+
+  The trick to ARC is that the length of each queue is determined
+  dynamically. The algorithm includes a ghost list that remembers which
+  memory blocks were recently evicted. If a cache miss occurs, but the
+  reference would have been a hit if the ghost entry had been in cache, then
+  the length of the eviction queue is increased while the length of the other
+  eviction queue is decreased \cite{arc}.
+
+\subsection{Least Recently/Frequently Used (LRFU)}
+  This algorithm specifies a value for all pages within cache based on an
+  exponential smoothing function. This algorithm depends on a tuning parameter
+  $\lambda$. For certain values of $\lambda$ the LRFU will model an LRU and
+  for other values of $\lambda$ it will model an LFU \cite{kim2001lrfu}.
+
+  The intuition behind the LRFU algorithm is that the more a page is used, the
+  more important it is, but that more recent references should count more than
+  older references. This idea is somewhere between the LRU policy where only the
+  most recent reference is used to inform a decision and the LFU policy where
+  ancient references to a page are assumed to be just as informative as recent
+  references to a page.
+
+  While the exponentially decaying reference counts allows this algorithm to
+  discount older references, there isn't any model to determine what a decent
+  decay rate is. The most effective approach has been to collect a trace that is
+  typical of a particular application's workload and then select the decay rate
+  $\lambda$ based on analysis of that trace.
+
+\subsection{Frequency Based Replacement (FBR)}
+  This policy uses a series of heuristics to blend together the LRU and LFU
+  policies. Every page maintains a reference count. Furthermore, the algorithm
+  uses three sections: new, middle, and old. A page accumulates references while
+  it is in the middle or old sections, but it does not while a page is in the
+  new section. Pages are only evicted from the old section, which allows pages
+  in the middle section enough time to build up useful reference counts.
+  Finally, the algorithm uses an exponential decay to periodically reduce the
+  hit counts \cite{robinson1990data}.
+
+  As can be seen in these brief descriptions, most current caching algorithms
+  are based on heuristics. The FBR heuristic is based more on observations of
+  paging behavior than the more general 2Q or ARC algorithms. Even though the
+  LRU has been shown to be optimal for a specific type of SDD, it is still based
+  on the heuristic that recent pages are more valuable than older pages. The
+  LRU-K algorithm modifies LRU by making the assumption that it is more useful
+  to approximate the rate with which a page is requested than to merely know the
+  most recent request for a page. While the LRFU algorithm uses statistical
+  ideas, it only uses them to blend together recency and frequency measurements.
+  This blending is not motivated by any data; it's a heuristic that takes two
+  measurements and maps them down to a single heuristic value.
+
+  The one algorithm that is heavily based on a statistical distribution is the
+  LFU algorithm. However, this algorithm is very inflexible and suffers from a
+  severe bias in its caching decisions. This severe bias is due to treating
+  ancient references to a page as being just as informative as recent reference
+  to the page which causes the algorithm to consistently favor pages that have
+  once upon a time been popular.
+
+\subsection{Low Inter-Reference Recency Set (LIRS)}
+  The low inter-reference recency set attempts to make eviction decisions based
+  on how frequently individual pages are referenced \cite{jiang2002lirs}. When
+  the amount of time between references is short, the algorithm places pages at
+  the beginning of the low inter-reference recency set (LIRS) eviction queue.
+  When the page reaches a certain age, it is placed at the beginning of the high
+  inter-reference recency set (HIRS) eviction queue. Cold pages -- that is,
+  pages that do not exist in the cache as either resident page nor as meta data
+  stubs -- are placed at the top of the HIRS eviction queue.  This placement is
+  due to fact that the amount of time between the page's most recent and
+  penultimate references is, as far as the algorithm can determine, infinite.
+  All pages in the LIRS are resident in memory, but only a few of the pages in
+  the HIRS are resident in memory at any time. The majority of the pages in the
+  high inter-reference recently set exist as ghost page stubs.
+
+\section{A statistical approach}
+  An alternative to a heuristic approach is to construct a flexible statistical
+  model. Using measurements for each page held in cache, it is possible to use
+  a model to derive the probability that a page will be requested again. By
+  multiplying this probability by the cost of fetching a page, a caching policy
+  will be able to evict only the pages that have the smallest impact on the
+  caching system.
+
+  However, several issues must be solved before this high level concept can be
+  translated into machine code. One issue is the question of what measurements
+  the algorithm can take for each page. Some measurement of recency will be
+  useful. A simple way to measure recency is to compare the timestamp for the
+  last request for a page against the current timestamp provided by the computer's
+  clock. While this is simple, and correlates with the stack depth distribution
+  (SDD), it is not a perfect corollary. An alternative measurement of recency is
+  to use the location of a page in the SDD. This means that the algorithm
+  must be able to count the number of unique pages that have been seen since a
+  page was last requested. A linked list will not provide a quick enough method to
+  identify the index of a page that is deep in the list, but a balanced binary
+  tree that stores the sizes of subtrees can be used in lieu of a linked list.
+  This provides a quicker way to identify the index of a page in the SDD.
+
+  Another measurement is to compare how frequently a page has been requested
+  relative to the other pages in cache. A simple counter for each page could
+  provide a sortable key that provides such a ranking; however, when should this
+  count be started? The easiest implementation is to start the count when
+  a page is brought into cache. However, it is also possible to use a rolling
+  history or an exponential decay for the hit count.
+
+  A core problem is to identify which of several measurements matters for a
+  specific page request. A convenient representation is to use a mixture model
+  that is composed of several source distributions where each source distribution
+  describes only one of the measurements taken for page requests. Whenever
+  the algorithm takes measurements for a page, it needs to identify which
+  of these source distributions the page request came from. However, this is
+  censored information and can only be approximated. One approximation is to
+  identify the likelihood that any one of the source distributions produces a
+  page request with the observed measurements.
+
+  These source distributions need to be described compactly. Any of a large
+  variety of statistical distributions can be selected to represent a source
+  distribution. Once a family of distributions is selected, the algorithm
+  needs a way to identify values for the parameters that describe these
+  distributions.
+
+  However, the estimate for the model parameters depends on which distribution a
+  page request is assigned to. To complicate issues, the distribution to which a
+  page request is assigned depends on the model parameters. A closed-form
+  solution for this conundrum only exists for some mixtures
+  \cite{sundberg1974maximum}. An alternative to a closed-form solution is the
+  expectation-maximization (EM) algorithm, which uses a hill-climbing approach
+  to produce approximations for the model parameters that converge to an optimal
+  value \cite{dempster1977maximum}.
+
+  Finally, once the model parameters are identified, the algorithm is able
+  to select the page with the smallest expected value.
+
+  The next chapter explores solutions to these issues. The goal is to derive the
+  details for an algorithm that is capable of making reasonable eviction
+  decisions.
+

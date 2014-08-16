@@ -1,0 +1,20 @@
+\section*{\vspace*{-35pt}\large{
+\begin{center}Abstract
+\end{center}}
+\vspace*{-10pt}}
+
+  Current caching algorithms are based on heuristics or inflexible statistical
+  models. In this thesis, I present the mixture model caching (MMC) algorithm.
+  This algorithm uses a flexible mixture of statistical models to describe the
+  current usage of a computer's memory. MMC uses the expectation-maximization
+  (EM) algorithm to estimate all model parameters in the mixture before it
+  evicts the page with the smallest expected value. I present two mixture
+  models -- one that looks at the recency and frequency of page references, and
+  one that additionally looks at whether the last reference to a page was for a
+  read or for a write.
+
+  I use traces from real systems to demonstrate that MMC makes reasonable page
+  eviction decisions. I use published traces to compare both versions of MMC to
+  the least recently used (LRU) algorithm and the adaptive replacement cache
+  (ARC) algorithm. MMC outperformed LRU and compared favorably with ARC.
+

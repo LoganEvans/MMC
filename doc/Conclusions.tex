@@ -1,0 +1,46 @@
+\chapter{Conclusions}
+\label{chapter:conclusions}
+
+In this thesis, I have presented a statistical model for a caching algorithm. This
+model is unique among caching algorithms because of the flexibility of the
+approach, which I demonstrated by extending the algorithm to account for
+read/write information. This statistical approach represents a new paradigm in
+caching algorithms.
+
+A well-known issue with machine-learning techniques is the variance-bias
+tradeoff \cite{intro_to_statistical_learning}. This concept relates to the fact
+that the average squared error of a prediction can be decomposed into the
+squared bias, which is the consistent and systemic error; the squared variance,
+which is the error that occurs because a model is not flexible enough; and an
+irreducible error that occurs because some things are just random. A model that
+has too few degrees of freedom typically has a large bias, while a model with
+too many degrees of freedom will typically has a large variance.
+
+Some caching algorithms, such as the LRU, have no degrees of freedom, which
+means that they are unable to adapt to match the data \cite{aho1971principles}.
+The ARC algorithm is given a single degree of freedom \cite{arc}. In contrast
+with these algorithms, the MMC algorithm is able to incorporate any number of
+degrees of freedom.
+
+Furthermore, the MMC algorithm is able to incorporate measurements that cannot
+be handled by previous algorithms. I have demonstrated this by deriving a method
+that accounts for read/write information. While this model shows promising
+results, it also displays some odd behavior. More specifically, the algorithm is
+willing to evict the newest pages. While this decision was dictated by the
+statistical model, it is contrary behavior to what many people expect from a
+caching algorithm.
+
+Even though I supplied a reference implementation, the algorithm is not yet
+mature enough to be implemented in a production setting \cite{supplimental}.
+The most glaring issue is the execution speed. Most of the phases of the
+algorithm take $O(log(|K|))$ time, where $|K|$ is the size of the cache.
+However, one portion of the algorithm takes $O(|K|)$ time. This is the phase
+where the algorithm recomputes the expected value for all pages in cache.
+Several techniques could be employed to reduce this time. Some of these
+techniques are outlined in the future work section \ref{chapter:future_work}.
+
+The primary benefits of the MMC algorithm are, first, that it provides a way to
+obtain statistical insight into how a process generates page requests, and
+second, that it provides a way to use data other than age or frequency when
+making caching decisions.
+

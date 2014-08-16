@@ -1,0 +1,57 @@
+\chapter{Future Work}
+\label{chapter:future_work}
+
+  Several issues need to be resolved before MMC is ready to be tested in a
+  production setting. Furthermore, deeper research into particular aspects of
+  the MMC algorithm could yield improved performance. In this chapter I outline
+  many of these important questions.
+
+\begin{enumerate}
+
+\item
+  Can we identify the page with the smallest expected value, or close to the
+  smallest expected value, in less than $O(|K|)$ time?
+
+\item
+  Can a mixture model be used to provide a caching algorithm that is local to a
+  process or a thread, but where the amount of main memory that a process can
+  utilize is governed by a mixing parameter?
+
+\item
+  If we can estimate the expected headway between faults, can we use this
+  information to inform the scheduler?
+
+\item
+  Is there any benefit to looking at the relationship between page locations? For
+  example, a page hit occurs when the page is re-referenced while it is in
+  cache. However, what if we count a reference to page $x + 1$ as a partial
+  hit to page $x$?
+
+\item
+  Can we use more flexible distribution families to describe the shape of the
+  source distributions?
+
+\item
+  What other measurements can we take for page requests, and do these
+  measurements help improve the hit rate of the MMC algorithm?
+
+\item
+  Do alternatives to the EM algorithm exist that require drastically less
+  processing time?
+
+\item
+  Can a probabilistic model for prefetching be described that will fit into the
+  MMC mixture model?
+
+\item
+  What design modifications need to be made to use fixed-point arithmetic rather
+  than floating-point arithmetic for all of the internal calculations?
+
+Addressing these questions will allow us to take full advantage of the strengths
+of the MMC algorithm. Virtual memory is one of the fundamental areas of
+systems research, but caches have traditionally been a black box. Development
+into statistical cache analysis techniques and algorithms could yield vital
+insights and enhancements.
+
+\end{enumerate}
+

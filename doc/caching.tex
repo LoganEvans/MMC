@@ -1,0 +1,306 @@
+%% Parts of the formatting were taken from a template with the following
+%% information:
+%%
+%% This template was created by PhD student Chris Zeoli in spring 2011 to meet
+%% the University of Idaho College of Graduate Studies requirements for a PhD
+%% Thesis.
+%%
+%% Updated by Graduate Student Juan Marulanda in Fall 2013 under the supervision
+%% of Thesis and Dissertation Formatting Advisor Melinda Deyasi from the College
+%% of Graduate Studies at University of Idaho
+%% Contact: maru2593@vandals.uidaho.edu
+
+\documentclass[12pt,letterpaper]{report}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{accents}
+\usepackage{bm}
+\usepackage{tocloft}
+\usepackage{amsfonts}
+\usepackage{indentfirst}
+\usepackage{tabto}
+
+\renewcommand{\cftpartleader}{\cftdotfill{\cftdotsep}} % for parts
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % for chapters
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}} % for sections
+
+%Allows placement of graphics.
+%Recommended packages for figures and subfigures that fits this templates
+\usepackage[pdftex]{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+%Allows fcns like doublespace, singlespace, and singlehalfspacing of text.
+\usepackage{setspace}
+
+\newcommand{\ubar}[1]{\underaccent{\bar}#1}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\Geom}{\operatorname{Geom}}
+\DeclareMathOperator*{\Read}{\operatorname{Read}}
+
+\title{\textbf{MMC: THE DEVELOPMENT OF THE MIXTURE MODEL CACHING ALGORITHM}}
+%Clears plain-page pg# settings, relocates pg#'s @ top-right-corner.
+\makeatletter
+\renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.3em}}
+\renewcommand{\ps@plain}{
+\renewcommand\@oddhead{\hfill\normalfont\textrm{\thepage}}
+\renewcommand\@evenhead{}
+\renewcommand\@oddfoot{}
+\renewcommand\@evenfoot{}}
+\renewcommand{\arraystretch}{1.5}
+
+%Reduces space between section headings and top margin
+\def\@makechapterhead#1{%
+  \vspace*{-40\p@}%
+  {\parindent \z@ \raggedright \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+        \center\large\bfseries \@chapapp\space \thechapter : \space  #1\par\nobreak
+        %\center\large\bfseries \thechapter : #1\par\nobreak
+        \par\nobreak
+        \vskip 10\p@
+  }}
+
+\def\@makeschapterhead#1{%
+  \vspace*{-40\p@}%
+  {\parindent \z@ \raggedright
+    \normalfont
+    \interlinepenalty\@M
+    \center\large \bfseries  #1\par\nobreak
+    \vskip 10\p@
+  }}
+
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+                                  {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                  {2.3ex \@plus.2ex}%
+                                  {\normalfont\large\bfseries}}
+
+\renewcommand\subsection{\@startsection{subsection}{1}{\z@}%
+                                  {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                  {2.3ex \@plus.2ex}%
+                                  {\normalfont\large\bfseries}}
+
+\makeatother
+
+%Changes leading pg#'s to roman sytle
+\renewcommand{\thepage}{\roman{page}}
+%Renames contents label explicitly
+\renewcommand{\contentsname}{Table of Contents}
+
+%Margins
+\addtolength{\voffset}{-.5in}
+\addtolength{\hoffset}{-.145in}
+\setlength{\marginparwidth}{1.25in}
+\setlength{\oddsidemargin}{.625in}
+\setlength{\marginparsep}{0in}
+\setlength{\topmargin}{12pt}
+\setlength{\headheight}{12pt}
+\setlength{\headsep}{20pt}
+\setlength{\textheight}{9in}
+\setlength{\textwidth}{6in}
+\setlength{\footskip}{0in}
+
+\setlength{\cftbeforetoctitleskip}{-23pt}
+%\renewcommand{\cfttoctitlefont}{\hfill\large\bfseries}
+\renewcommand{\contentsname}{\hfill\bfseries\large Table of Contents\hfill}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\setlength{\cftaftertoctitleskip}{10pt}
+\setlength{\cftbeforechapskip}{0pt}
+
+\setlength{\cftbeforelottitleskip}{-23pt}
+\renewcommand{\cftlottitlefont}{\hfill\large\bfseries}
+\renewcommand{\cftafterlottitle}{\hfill}
+\setlength{\cftafterlottitleskip}{-10pt}
+
+\setlength{\cftbeforeloftitleskip}{-21pt}
+\renewcommand{\cftloftitlefont}{\hfill\large\bfseries}
+\renewcommand{\cftafterloftitle}{\hfill}
+\setlength{\cftafterloftitleskip}{-10pt}
+
+%Sets all text to double space, per \usepackage{setspace}
+\doublespacing
+
+\begin{document} \bibliographystyle{plain}
+%\nocite{*} \maketitle
+%Sets non-header pages to same format (location) as header pages, e.g upper-right.
+\pagestyle{myheadings}
+
+%Clears pg# from displaying on titlepage
+\thispagestyle{empty}
+
+%Titlepage
+\begin{center}
+MMC: The Development of the Mixture Model Caching Algorithm\\
+\vspace{73pt}
+A Thesis\\
+Presented in Partial Fulfillment of the Requirements for the\\
+Degree of Master of Science\\
+with a\\
+Major in Computer Science\\
+in the\\
+College of Graduate Studies\\
+University of Idaho\\
+\vspace{84pt}
+by\\
+Logan Evans\\
+\vspace{48pt}
+May 2014\\
+\vspace{60pt}
+Major Professor: Terence Soule, Ph.D.\\
+\end{center}
+\pagebreak
+
+%Authorization to Submit Thesis
+\addcontentsline{toc}{chapter}{Authorization to Submit Thesis}
+\section*{\vspace*{-35pt}\large{
+  \begin{center}
+  Authorization to Submit Thesis
+  \end{center}}\vspace*{-10pt}}
+
+  \begin{flushleft}
+  This thesis of Logan Evans, submitted for the degree of Master of Science with
+  a major in Computer Science and titled \lq\lq MMC: The Development of the
+  Mixture Model Caching Algorithm," has been reviewed in final form. Permission,
+  as indicated by the signatures and dates given below, is now granted to submit
+  final copies to the College of Graduate Studies for approval.
+  \end{flushleft}
+
+\begin{singlespace}
+\noindent
+Major Professor:
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][+l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Terence Soule, Ph.D.\\
+\ \\
+Committee\\
+Members:
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Steve Krone, Ph.D.\\
+\ \\
+\ \ \indent\indent\indent\indent\indent\indent
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Clinton Jeffery, Ph.D.\\
+\ \\
+Department\\
+Administrator:
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Gregory Donohoe, Ph.D.\\
+\ \\
+Discipline's\\
+College Dean:
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Larry Stauffer, Ph.D.\\
+\ \\
+Final Approval and Acceptance\\
+\ \\
+Dean of the College\\
+of Graduate Studies:
+\tabto{4cm}\underline{\makebox[2.8in][l]{\ }}
+Date:
+\underline{\makebox[1.2in][l]{\ }}\\
+\ \ \indent\indent\indent\indent\indent\indent\indent Jie Chen, Ph.D.\\
+\end{singlespace}
+\pagebreak
+
+% Abstract
+\addcontentsline{toc}{chapter}{Abstract}
+\input{Abstract}
+\pagebreak
+
+% Acknowledgements
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\input{Acknowledgements}
+\pagebreak
+
+%\addcontentsline{toc}{chapter}{Dedication}
+%\input{Dedication}
+%\pagebreak
+
+% Table of Contents
+\addcontentsline{toc}{chapter}{Table of Contents}
+\tableofcontents
+\pagebreak
+
+% List of Tables
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+\pagebreak
+
+% List of Figures
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\pagebreak
+
+%Sets page count at one
+\setcounter{page}{1}
+%Sets pg# type to display arabic numerals
+\renewcommand{\thepage}{\arabic{page}}
+
+\input{Introduction}
+\pagebreak
+
+\input{Background}
+\pagebreak
+
+\input{Methods}
+\pagebreak
+
+\input{Results}
+\pagebreak
+
+\input{Conclusions}
+\pagebreak
+
+\input{FutureWork}
+\pagebreak
+
+%References
+\addcontentsline{toc}{chapter}{References}
+
+%Relabels bibliography title as "References"
+\renewcommand\bibname{References}
+\bibliography{yhpargoil}
+
+\end{document}
+
+
+%% Recommended command line for single figures
+%\begin{figure}[!t]
+%\centering
+%\includegraphics[width=4.5in]{filename}
+%\caption{caption text}
+%\label{fig:labelTitle}
+%\end{figure}
+
+
+%% Recommended command line for subfigures
+%% The current example is set for a figure box that contains 2 subfigures
+%% For additional subfigures, the command \begin{subfigure}{.5\textwidth}
+%% has to be modified
+%\begin{figure}
+%\centering
+%\begin{subfigure}{.5\textwidth}
+%  \centering
+%  \includegraphics[scale=0.3]{filenameA}
+%  \caption{caption text A}
+%  \label{fig:labelTitleA}
+%\end{subfigure}%
+%\begin{subfigure}{.5\textwidth}
+%  \centering
+%  \includegraphics[scale=0.3]{filenameB}
+%  \caption{caption text B}
+%  \label{fig:labelTitleB}
+%\end{subfigure}
+%\caption{main caption text}
+%\label{fig:mainLabelTitle}
+%\end{figure}
+
